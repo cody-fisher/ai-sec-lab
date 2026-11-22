@@ -1,4 +1,4 @@
-# AI Security Lab
+# ai-sec-lab
 
 **A hands-on lab for learning how to give AI agents a verifiable identity, and how to keep them inside the lines once they have one.**
 
@@ -58,18 +58,18 @@ gantt
     title ai-sec-lab roadmap (2026–2027)
     dateFormat YYYY-MM-DD
     axisFormat %b
-    section Phase 0
-    Local lab + Kubernetes basics + first LLM   :p0, 2026-11-22, 2026-12-06
-    section Phase 1
-    Identity fundamentals + SPIRE + AWS federation :p1, 2026-12-07, 2027-01-17
-    section Phase 2
-    Production-style SPIRE on EKS                 :p2, 2027-01-18, 2027-03-14
-    section Phase 3
-    Service mesh + AI gateway                     :p3, 2027-03-15, 2027-04-25
-    section Phase 4
-    Secured agent + red team                      :p4, 2027-04-26, 2027-06-13
-    section Phase 5
-    Write-up + demo                               :p5, 2027-06-14, 2027-07-31
+    section 0 · Lab
+    Lab        :p0, 2026-11-22, 2026-12-06
+    section 1 · Identity
+    SPIRE      :p1, 2026-12-07, 2027-01-17
+    section 2 · EKS
+    SPIRE HA   :p2, 2027-01-18, 2027-03-14
+    section 3 · Mesh
+    Gateway    :p3, 2027-03-15, 2027-04-25
+    section 4 · Agent
+    Red team   :p4, 2027-04-26, 2027-06-13
+    section 5 · Demo
+    Write-up   :p5, 2027-06-14, 2027-07-31
 ```
 
 | Phase | Dates | What I'm learning | What I'll have built | Status |
