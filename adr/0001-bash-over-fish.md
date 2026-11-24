@@ -7,7 +7,7 @@
 
 I prefer fish for day-to-day use: autosuggestions, nicer syntax and good defaults. But the CKA exam (Phase 2) and the CKS exam after it run in a bash terminal on a remote machine. Speed in those exams comes from muscle memory: `alias k=kubectl`, tab completion for `k`, the `$do` dry-run shortcut, and being able to write quick shell loops without thinking about syntax.
 
-Practising daily in one shell and sitting the exam in another means relearning habits under time pressure. fish's syntax is also not POSIX, so one-liners I get used to in fish (`set -x`, `(cmd)` substitution, `and`/`or`) would fail in the exam terminal.
+Practicing daily in one shell and sitting the exam in another means relearning habits under time pressure. fish's syntax is also not POSIX, so one-liners I get used to in fish (`set -x`, `(cmd)` substitution, `and`/`or`) would fail in the exam terminal.
 
 ## Decision
 
