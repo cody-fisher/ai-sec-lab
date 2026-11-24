@@ -1,0 +1,14 @@
+{
+  // VS Code offers to install these when the repo is opened.
+  "recommendations": [
+    "golang.go",
+    "redhat.vscode-yaml",
+    "ms-kubernetes-tools.vscode-kubernetes-tools",
+    "tsandall.opa",
+    "hashicorp.terraform",
+    "timonwong.shellcheck",
+    "bierner.markdown-mermaid",
+    "davidanson.vscode-markdownlint",
+    "editorconfig.editorconfig"
+  ]
+}
