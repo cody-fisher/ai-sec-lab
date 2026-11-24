@@ -104,21 +104,21 @@ These run only on `lab-control-plane`. The kubelet starts them directly from man
 
 ## Experiments: what I broke and what happened
 
-Run each with the Step G `web` deployment running in `demo`, so `curl localhost:8080` shows whether existing traffic survives. Copy the prediction into **Expected** before running.
+Run each with the Step G `web` deployment running in `demo`, so `curl localhost:8080` shows whether existing traffic survives. What I expected is in the **Prediction** column of the component tables above (see the **Test** column).
 
-| # | What I did | What I expected | What actually happened | Lesson |
+| # | Component | What I did | What actually happened | Lesson |
 | --- | --- | --- | --- | --- |
-| 1 | `k -n kube-system delete pod -l k8s-app=kube-dns` | _TODO_ | _TODO_ | _TODO_ |
-| 2 | `k -n kube-system scale deploy coredns --replicas=0`, then resolve a Service name from a test pod (`kdebug`) | _TODO_ | _TODO_ | _TODO_ |
-| 3 | `docker exec lab-worker systemctl stop kubelet`, then `k get nodes -w` | _TODO_ | _TODO_ | _TODO_ |
-| 4 | `docker exec lab-control-plane mv /etc/kubernetes/manifests/kube-scheduler.yaml /tmp/`, then create a pod | _TODO_ | _TODO_ | _TODO_ |
-| 5 | `docker exec lab-control-plane mv /etc/kubernetes/manifests/kube-apiserver.yaml /tmp/`, then `curl localhost:8080` and `k get pods -n demo` | _TODO_ | _TODO_ | _TODO_ |
-| 6 | Same with `etcd.yaml` | _TODO_ | _TODO_ | _TODO_ |
-| 7 | Same with `kube-controller-manager.yaml`, then delete a `web` pod and `k -n demo scale deploy web --replicas=4` | _TODO_ | _TODO_ | _TODO_ |
-| 8 | `k -n kube-system patch ds kube-proxy -p '{"spec":{"template":{"spec":{"nodeSelector":{"lab-off":"true"}}}}}'`, then `curl localhost:8080` and test a newly created Service | _TODO_ | _TODO_ | _TODO_ |
-| 9 | Same patch on `ds kindnet`, then curl a pod IP on the other worker from `kdebug`, and create a new pod | _TODO_ | _TODO_ | _TODO_ |
-| 10 | `docker exec lab-worker systemctl stop containerd`, then `curl localhost:8080`, `k get nodes -w`, `docker exec lab-worker crictl ps` | _TODO_ | _TODO_ | _TODO_ |
-| 11 | `k -n local-path-storage scale deploy local-path-provisioner --replicas=0`, then create a PVC and a pod that uses it | _TODO_ | _TODO_ | _TODO_ |
+| 1 | CoreDNS | `k -n kube-system delete pod -l k8s-app=kube-dns` | _TODO_ | _TODO_ |
+| 2 | CoreDNS | `k -n kube-system scale deploy coredns --replicas=0`, then resolve a Service name from a test pod (`kdebug`) | _TODO_ | _TODO_ |
+| 3 | kubelet | `docker exec lab-worker systemctl stop kubelet`, then `k get nodes -w` | _TODO_ | _TODO_ |
+| 4 | kube-scheduler | `docker exec lab-control-plane mv /etc/kubernetes/manifests/kube-scheduler.yaml /tmp/`, then create a pod | _TODO_ | _TODO_ |
+| 5 | kube-apiserver | `docker exec lab-control-plane mv /etc/kubernetes/manifests/kube-apiserver.yaml /tmp/`, then `curl localhost:8080` and `k get pods -n demo` | _TODO_ | _TODO_ |
+| 6 | etcd | Same with `etcd.yaml` | _TODO_ | _TODO_ |
+| 7 | kube-controller-manager | Same with `kube-controller-manager.yaml`, then delete a `web` pod and `k -n demo scale deploy web --replicas=4` | _TODO_ | _TODO_ |
+| 8 | kube-proxy | `k -n kube-system patch ds kube-proxy -p '{"spec":{"template":{"spec":{"nodeSelector":{"lab-off":"true"}}}}}'`, then `curl localhost:8080` and test a newly created Service | _TODO_ | _TODO_ |
+| 9 | kindnet | Same patch on `ds kindnet`, then curl a pod IP on the other worker from `kdebug`, and create a new pod | _TODO_ | _TODO_ |
+| 10 | containerd | `docker exec lab-worker systemctl stop containerd`, then `curl localhost:8080`, `k get nodes -w`, `docker exec lab-worker crictl ps` | _TODO_ | _TODO_ |
+| 11 | local-path-provisioner | `k -n local-path-storage scale deploy local-path-provisioner --replicas=0`, then create a PVC and a pod that uses it | _TODO_ | _TODO_ |
 
 > **Restore after each test:** scale CoreDNS back to 2; `systemctl start kubelet` / `containerd`; move manifests back from `/tmp/` and wait about 30 s; remove the DaemonSet patch with `k -n kube-system patch ds <name> --type json -p '[{"op":"remove","path":"/spec/template/spec/nodeSelector/lab-off"}]'`; scale local-path-provisioner back to 1. Last resort: `lab-reset`.
 
