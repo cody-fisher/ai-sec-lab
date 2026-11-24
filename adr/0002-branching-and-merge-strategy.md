@@ -14,12 +14,12 @@ The repo also gets direct commits from outside the PR flow: an iPhone Shortcut a
 1. **One branch per piece of work**, named `<area>/<short-name>` where `<area>` matches the top-level folder, for example `notes/00-cluster`, `clusters/nodeport-mapping`, `projects/spire-kind`.
 2. **Merge through a pull request with squash-merge only.** Each PR becomes one commit on `master`, and the PR title becomes that commit's subject (see [ADR 0003](0003-commit-message-convention.md)). Branch commits can be messy.
 3. **GitHub ruleset on `master`** with these rules:
-   - *Restrict updates*: only bypass actors can push to or merge into `master`.
+   - *Require a pull request before merging*: required approvals 0, allowed merge method *Squash* only. Changes reach `master` through a PR, and a PR merge needs no bypass.
    - *Restrict deletions*: `master` can't be deleted.
    - *Block force pushes*: history on `master` can't be rewritten.
    - *Require linear history*: no merge commits on `master`, which matches squash-only merging.
 
-   *Repository admin* is the only bypass actor, set to *Always*. The bypass lets the iPhone Shortcut (and me, in an emergency) write to `master` directly. *Require a pull request before merging* is deliberately left off: with the bypass in place it adds nothing, and without the bypass it would break the Shortcut.
+   *Repository admin* is the only bypass actor, set to *Always*. The bypass lets the iPhone Shortcut (and me, in an emergency) push to `master` directly; GitHub records each bypass.
 4. **Annotated tag at the end of each phase**, for example `phase-0`, with a short summary of what the phase produced. GitHub release notes are generated from the PRs merged since the previous tag.
 
 Repository settings that go with this:
@@ -41,10 +41,11 @@ Repository settings that go with this:
 - **Merge commits (no squash):** keeps every branch commit on `master`. That's useful when individual commits matter, but in a notes-heavy repo they mostly read like "fix typo".
 - **Rebase-merge:** linear history like squash, but keeps every branch commit, which leads to the same noise.
 - **Branch protection requiring reviews or status checks:** there's no second reviewer, and no CI yet worth gating on.
+- **Ruleset with *Restrict updates* instead of *Require a pull request*:** tried first (2026-11-24) and dropped. *Restrict updates* lets only bypass actors update `master`, and merging a PR counts as an update, so every PR merge was blocked with "Cannot update this protected ref" unless I ticked the bypass checkbox. Bypassing on every merge would train me to ignore the rules.
 
 ## Consequences
 
 - `git log --oneline master` shows one line per piece of work, which is easy to scan and feeds release notes per phase.
 - Branch-level detail (individual commits) is lost on `master` after the squash. If that history matters for a change, it belongs in the PR description, which GitHub keeps.
-- **The ruleset doesn't stop me.** I'm the repository admin, and the bypass is set to *Always*, so none of the four rules apply to my own pushes. They block other tokens and collaborators, but for my own changes the workflow relies on habit. That's a deliberate trade-off to keep the iPhone Shortcut working.
+- **The ruleset doesn't stop me.** I'm the repository admin, and the bypass is set to *Always*, so I can still push to `master` directly. The rules block other tokens and collaborators, but for my own changes the workflow relies on habit. That's a deliberate trade-off to keep the iPhone Shortcut working.
 - If CI is added later (for example `kubeconform` or `opa test` in Phase 1+), revisit this: add a required status check, and consider giving the Shortcut its own narrowly scoped token with bypass, then setting the admin bypass to *For pull requests only*.
