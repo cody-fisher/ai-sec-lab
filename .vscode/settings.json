@@ -1,0 +1,18 @@
+{
+  // Settings for this repo only. They override user settings when it's open.
+
+  // Validate and autocomplete Kubernetes manifests in project folders.
+  // clusters/ is left out: kind's Cluster config isn't a Kubernetes object.
+  "yaml.schemas": {
+    "kubernetes": ["projects/**/*.yaml", "projects/**/*.yml"]
+  },
+
+  // Hide noise from search and the file explorer
+  "files.exclude": {
+    "**/.terraform": true
+  },
+  "search.exclude": {
+    "**/.terraform": true,
+    "**/vendor": true
+  }
+}
