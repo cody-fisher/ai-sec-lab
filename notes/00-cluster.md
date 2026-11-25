@@ -106,9 +106,16 @@ These run only on `lab-control-plane`. The kubelet starts them directly from man
 
 Run each with the Step G `web` deployment running in `demo`, so `curl localhost:8080` shows whether existing traffic survives. What I expected is in the **Prediction** column of the component tables above (see the **Test** column).
 
+### Baseline check
+
+Run `kcheck` (from my dotfiles, `30-kube.sh`) once before the first test, then after breaking something and again after restoring it. It shows HTTP status for `localhost:8080`, node status, pods that aren't Running, and the newest events.
+Run each with the `web` deployment running in `demo` (`k create ns demo; k apply -f projects/00-web-demo/`), so `curl localhost:8080` shows whether existing traffic survives.
+
+### Results
+
 | # | Component | What I did | What actually happened | Lesson |
 | --- | --- | --- | --- | --- |
-| 1 | CoreDNS | `k -n kube-system delete pod -l k8s-app=kube-dns` | _TODO_ | _TODO_ |
+| 1 | CoreDNS | `k -n kube-system delete pod -l k8s-app=kube-dns` | New CoreDNS containers with new names were started in less than 1s on 2 different nodes. | ✅ Recreated by the ReplicaSet within ~1s with new names. Deleting a pod tests its owner, not the component itself. Static pods are recreated by the kubelet instead (see "Reading pod names"). |
 | 2 | CoreDNS | `k -n kube-system scale deploy coredns --replicas=0`, then resolve a Service name from a test pod (`kdebug`) | _TODO_ | _TODO_ |
 | 3 | kubelet | `docker exec lab-worker systemctl stop kubelet`, then `k get nodes -w` | _TODO_ | _TODO_ |
 | 4 | kube-scheduler | `docker exec lab-control-plane mv /etc/kubernetes/manifests/kube-scheduler.yaml /tmp/`, then create a pod | _TODO_ | _TODO_ |
@@ -120,7 +127,25 @@ Run each with the Step G `web` deployment running in `demo`, so `curl localhost:
 | 10 | containerd | `docker exec lab-worker systemctl stop containerd`, then `curl localhost:8080`, `k get nodes -w`, `docker exec lab-worker crictl ps` | _TODO_ | _TODO_ |
 | 11 | local-path-provisioner | `k -n local-path-storage scale deploy local-path-provisioner --replicas=0`, then create a PVC and a pod that uses it | _TODO_ | _TODO_ |
 
-> **Restore after each test:** scale CoreDNS back to 2; `systemctl start kubelet` / `containerd`; move manifests back from `/tmp/` and wait about 30 s; remove the DaemonSet patch with `k -n kube-system patch ds <name> --type json -p '[{"op":"remove","path":"/spec/template/spec/nodeSelector/lab-off"}]'`; scale local-path-provisioner back to 1. Last resort: `lab-reset`.
+### Extra checks per test
+
+Run these on top of `kcheck` while the component is broken.
+
+| # | Commands |
+| --- | --- |
+| 1 | `k -n kube-system get pods -l k8s-app=kube-dns -o wide -w`: new names? Same node? How fast? |
+| 2 | Outside: `k -n demo get svc web` (note the CLUSTER-IP) and `k -n kube-system get endpointslices -l k8s-app=kube-dns`. Inside `kdebug -n demo`: `nslookup web`, `curl -s <CLUSTER-IP> \| head -3`, `nslookup github.com` |
+| 3 | `k get nodes -w`; `k describe node lab-worker \| grep -A6 -E 'Taints\|Conditions'`; `docker exec lab-worker crictl ps`; after 5+ minutes: `k -n demo get pods -o wide` |
+| 4 | `k run t4 --image=nginx`; `k get pod t4 -o wide`; `k describe pod t4 \| tail -5`. Manual placement: `k run t4b --image=nginx --overrides='{"spec":{"nodeName":"lab-worker"}}'`, then `k get pod t4b -o wide` |
+| 5 | `k get pods` (copy the error); `docker exec lab-control-plane crictl ps -a \| grep -E 'apiserver\|scheduler\|controller'`; scheduler logs: `docker exec lab-control-plane sh -c 'crictl logs $(crictl ps -a -q --name kube-scheduler \| head -1) 2>&1 \| tail -5'` |
+| 6 | Same as 5, plus API server logs: `docker exec lab-control-plane sh -c 'crictl logs $(crictl ps -a -q --name kube-apiserver \| head -1) 2>&1 \| tail -5'` |
+| 7 | `k -n demo delete pod <one web pod>`; `k -n demo scale deploy web --replicas=4`; `k -n demo get deploy,rs,pods`; `k -n demo get endpointslices` |
+| 8 | `k -n kube-system get pods -l k8s-app=kube-proxy` (gone?); rule count vs baseline: `docker exec lab-worker iptables-save \| grep -c KUBE-` (nftables mode: `docker exec lab-worker nft list ruleset \| grep -c kube`; check mode with `k -n kube-system get cm kube-proxy -o yaml \| grep mode`); new Service: `k -n demo expose deploy web --name web2 --port 80`, then in `kdebug -n demo`: `curl -s web2 \| head -3` and `curl -s web \| head -3` |
+| 9 | `k -n demo get pods -o wide` (note a pod IP on each worker); in `kdebug`: `curl -s <pod IP on other worker> \| head -3`; new pod: `k run t9 --image=nginx`, `k get pod t9 -o wide`, `k describe pod t9 \| tail -5`; `docker exec lab-worker ip route` |
+| 10 | `docker exec lab-worker crictl ps` (copy the error); `docker exec lab-worker ps aux \| grep '[n]ginx'` (nginx processes still alive?); `k get nodes -w`; `k describe node lab-worker \| grep -A8 Conditions` |
+| 11 | `k apply -f projects/t11-pvc.yaml` (below); `k -n demo get pvc,pod`; `k -n demo describe pvc t11 \| tail -5`; `k -n demo describe pod t11 \| tail -5` |
+
+> **Restore after each test:** scale CoreDNS back to 2; `systemctl start kubelet` / `containerd`; move manifests back from `/tmp/` and wait about 30 s; remove the DaemonSet patch with `k -n kube-system patch ds <name> --type json -p '[{"op":"remove","path":"/spec/template/spec/nodeSelector/lab-off"}]'`; scale local-path-provisioner back to 1. Then run `check` and compare with the baseline. Clean up test objects: `k delete pod t4 t4b t9 --ignore-not-found` and `k -n demo delete svc/web2 pod/t11 pvc/t11 --ignore-not-found`. Last resort: `lab-reset`.
 
 ## How a request flows
 
@@ -139,7 +164,7 @@ What happens, step by step, after I run `kubectl create deployment web --image=n
 
 | Pattern | Example from my cluster | Created by | How to confirm |
 | --- | --- | --- | --- |
-| `<name>-<node-name>` | `etcd-lab-control-plane` | _TODO_ | `docker exec lab-control-plane ls /etc/kubernetes/manifests` |
+| `<name>-<node-name>` | `etcd-lab-control-plane` | manifests | `docker exec lab-control-plane ls /etc/kubernetes/manifests` |
 | `<name>-<replicaset-hash>-<random>` | `coredns-559f6c778d-8hlt7` | _TODO_ | `k -n kube-system get deploy,rs` |
 | `<name>-<random>` | `kindnet-kq6z6` | _TODO_ | `k -n kube-system get daemonset` |
 
@@ -153,6 +178,7 @@ kubectl -n kube-system describe pod etcd-lab-control-plane
 docker exec lab-control-plane ls /etc/kubernetes/manifests
 docker exec lab-worker systemctl status kubelet
 kubectl explain pod.spec
+kcheck   # baseline function from the Experiments section
 ```
 
 ## How this maps to later phases
@@ -183,3 +209,4 @@ kubectl explain pod.spec
 | --- | --- |
 | 2026-11-22 | Initial draft from fresh kind cluster |
 | 2026-11-24 | Completed notes on the cluster architecture and how it works |
+| 2026-11-24 | Added predictions, test plan, baseline and per-test checks |
