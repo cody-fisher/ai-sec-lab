@@ -1,8 +1,8 @@
-# Projects
+# Identity fundamentals (identity-labs)
 
 Hands-on work behind the roadmap. Projects built in this repo live in the folders below;
 learning projects built in separate repos are linked from the table
-([ADR 0006](../adr/0006-learning-repos-private.md)).
+([ADR 0006](../../adr/0006-learning-repos-private.md)).
 
 Some linked repos are private while I'm working in them. Each row should make sense
 without opening the link.
@@ -36,5 +36,5 @@ read those components' errors.
 | Expired client cert | _TODO_ | _TODO_ |
 | Wrong hostname | _TODO_ | _TODO_ |
 
-**Connects to:** [notes/00-cluster.md](../notes/00-cluster.md) (Phase 0),
+**Connects to:** [notes/00-cluster.md](../../notes/00-cluster.md) (Phase 0),
 SPIRE on kind (Phase 1), Istio ambient (Phase 3).
